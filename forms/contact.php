@@ -1,25 +1,51 @@
 <?php
 
-  $receiving_email_address = 'nimadorostkar97@gmail.com';
+    // Only process POST reqeusts.
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        // Get the form fields and remove whitespace.
+        $name = strip_tags(trim($_POST["name"]));
+                $name = str_replace(array("\r","\n"),array(" "," "),$name);
+        $email = filter_var(trim($_POST["email"]), FILTER_SANITIZE_EMAIL);
+        $subject = trim($_POST["subject"]);
+        $message = trim($_POST["message"]);
 
-  if( file_exists($php_email_form = '../assets/vendor/php-email-form/php-email-form.php' )) {
-    include( $php_email_form );
-  } else {
-    die( 'Unable to load the "PHP Email Form" Library!');
-  }
+        // Check that data was sent to the mailer.
+        if ( empty($name) OR empty($message) OR !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            // Set a 400 (bad request) response code and exit.
+            // http_response_code(400);
+            echo "Oops! There was a problem with your submission. Please complete the form and try again.";
+            exit;
+        }
 
-  $contact = new PHP_Email_Form;
-  $contact->ajax = true;
-
-  $contact->to = $receiving_email_address;
-  $contact->from_name = $_POST['name'];
-  $contact->from_email = $_POST['email'];
-  $contact->subject = $_POST['subject'];
+        // Set the recipient email address.
+        // FIXME: Update this to your desired email address.
+        $recipient = "nimadorostkar97@gmail.com";
 
 
-  $contact->add_message( $_POST['name'], 'From');
-  $contact->add_message( $_POST['email'], 'Email');
-  $contact->add_message( $_POST['message'], 'Message', 10);
+        // Build the email content.
+        $email_content = "Name: $name\n";
+        $email_content .= "Email: $email\n\n";
+        $email_content .= "subject: $subject\n";
+        $email_content .= "Message:\n$message\n";
 
-  echo $contact->send();
+        // Build the email headers.
+        $email_headers = "From: $name <$email>";
+
+        // Send the email.
+        if (mail($recipient, $subject, $email_content, $email_headers)) {
+            // Set a 200 (okay) response code.
+            // http_response_code(200);
+            echo " Thanks, your message was sent successfully ";
+        } else {
+            // Set a 500 (internal server error) response code.
+            // http_response_code(500);
+            echo " There seems to be a problem sending the message. So try again ";
+        }
+
+    } else {
+        // Not a POST request, set a 403 (forbidden) response code.
+        // http_response_code(403);
+        echo " There seems to be a problem sending the message. So try again ";
+    }
+
 ?>
